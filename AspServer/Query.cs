@@ -1,4 +1,6 @@
-﻿namespace AspServer
+﻿using AspServer.Models;
+
+namespace AspServer
 {
     public class Query
     {

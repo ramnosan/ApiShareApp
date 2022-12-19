@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AspServer
+namespace AspServer.Controller
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -21,29 +21,71 @@ namespace AspServer
     {
         private readonly ShareDb _context;
         private JwtSecurityTokenHandler tokenHandler;
+        private Dictionary<string, string> tokenUserDict;
 
         public UsersController(ShareDb context)
         {
             _context = context;
-            tokenHandler = new JwtSecurityTokenHandler()
+            tokenHandler = new JwtSecurityTokenHandler();
+            tokenUserDict = new Dictionary<string, string>();
+
+            var user = new User();
+            user.Name = "asd"; user.Password = "asdasd"; user.Email = "asd@asd.de";
+            this.Register(user);
         }
+
         [HttpPost]
-        public async Task<ActionResult> Register([FromBody]User user)
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordInput input)
         {
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
+            var token = input.Token;
+            var newPassword = input.Password;
+            if (this.tokenUserDict[token] != null)
+            {
+                var username = tokenUserDict[token];
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Name == username);
+                if(user != null)
+                {
+                    user.Password = newPassword;
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+            }
+            return BadRequest();
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Register([FromBody] User user)
+        {
+            try
+            {
+                var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email || u.Name == user.Name);
+                if (foundUser != null)
+                {
+                    return BadRequest("User name or email already exists.");
+                }
+                else
+                {
+                    await _context.Users.AddAsync(user);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
             return Ok();
         }
 
         [HttpPost]
-        public async Task<ActionResult> Login([FromBody]LoginModel user)
+        public async Task<ActionResult> Login([FromBody] LoginModel user)
         {
             var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.Name == user.Name);
             if (foundUser == null)
             {
                 return BadRequest("Invalid client request");
             }
-            else if(foundUser.Password == user.Password)
+            else if (foundUser.Password == user.Password)
             {
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -54,7 +96,8 @@ namespace AspServer
                     expires: DateTime.Now.AddMinutes(30),
                     signingCredentials: signinCredentials
                 );
-                var tokenString = this.tokenHandler.WriteToken(tokeOptions);
+                var tokenString = tokenHandler.WriteToken(tokeOptions);
+                this.tokenUserDict.Add(tokenString, user.Name);
                 return Ok(new AuthenticationResponse { Token = tokenString });
             }
             return ValidationProblem();
@@ -63,7 +106,7 @@ namespace AspServer
         [Authorize]
         public ActionResult Logout()
         {
-            return Ok();
+            return Ok("log out was authorized");
         }
 
         // GET: api/Users

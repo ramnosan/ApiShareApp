@@ -39,7 +39,7 @@ app.MapGet("/", () => "Hello World!");
 /*app.MapPost("/register", async (User user, ShareDb db) =>
 { _ = db.Users.Add(user); _ = await db.SaveChangesAsync(); return db.Users.ToListAsync(); });*/
 
-if (app.Environment.IsDevelopment())
+if (true || app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -50,7 +50,7 @@ app.UseCors(x => x
                 .AllowAnyHeader()
                 .SetIsOriginAllowed(origin => true) // allow any origin
                 .AllowCredentials()); // allow credentials
-app.MapGraphQL();
+//app.MapGraphQL();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

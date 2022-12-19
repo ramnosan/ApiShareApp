@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AspServer.Models;
+using AspServer.Models.game;
+using Microsoft.EntityFrameworkCore;
 
 namespace AspServer
 {

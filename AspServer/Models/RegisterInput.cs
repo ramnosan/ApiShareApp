@@ -1,0 +1,9 @@
+﻿namespace AspServer.Models
+{
+    public class RegisterInput
+    {
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+    }
+}
